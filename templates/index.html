@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>standalone</title>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.js"></script>
+<script>
+    require.config({
+        paths: {
+            json: 'https://cdnjs.cloudflare.com/ajax/libs/requirejs-plugins/1.0.3/json.min',
+            text: 'https://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.12/text.min'
+        }
+    });
+    require(['json!/app/appconfig.json'], function(appConfig) {
+        if (appConfig.loader.schema.toLowerCase() === 'http://apps.d2l.com/uiapps/umdschema/v1.json'){
+            window.location = '/.standalone/templates/umd.html';
+        }else{
+            window.location = '/.standalone/templates/iframe.html';
+        }
+    });
+</script>
+</body>
+</html>
