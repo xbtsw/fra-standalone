@@ -7,7 +7,9 @@ var resolveMultiConfig = require('./templates/common.js').resolveMultiConfig;
 var loadSandbox = require('getsandbox-express').loadSandbox;
 var express = require('express');
 
-var execFile = require('child_process').execFile;
+var exec = require('child_process').exec;
+
+var app;
 
 function resolvePath(filepath) {
   return path.resolve(path.dirname(configPath), filepath);
@@ -40,15 +42,13 @@ function createServer() {
 
 function runBuild() {
   resolveMultiConfig(config.buildCommands).forEach(function(cmd) {
-    cmd = cmd.split(' ');
-    cmd[0] = resolvePath(cmd[0]);
-    execFile('node', cmd, function(error, stdout) {
+    exec(cmd, function(error, stdout) {
       if (error) {
         throw error;
       }
       console.log(stdout);
-    })
-  })
+    });
+  });
 }
 
 runBuild();
