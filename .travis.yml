@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+- 5.10.1
+sudo: false
+deploy:
+  provider: npm
+  email: xbtsw.chen@gmail.com
+  api_key:
+    secure: StxJcS7ZTsl6sVJHnhq+KhMA3pvXrdT2XXM8xrIaESm7eIlC8ic0/XclL69IT/+SNGqtWjR0djkVB8bgExdHnjTN8qytUkxncK7s9TcwnYseOVc+OOF8/SPBPTLdX6xStQP5r6L8hSRmG1SATFkTsNFuF6tfSmqR1+N6oNqq1E8VqhgENZ7VBSbLPsaFjkL22NEqdjZlYb1sHJ81pvHpFLDnpCbvsj8+kFUnd8zRN+9vyqqXSFnyyl+JITTg9S9nVxfxLlUtIGU9E08c/dlLODOL9VIpGwxs0oE8JHqGPZik9ttcyDSnJVN3qpXuhniuVpmGbcHJEzCbE5lGXcdAG0VkGg8puTZZ+PBvtwrqjrg2ohtoYwlWfLShSlLOUPkMBtqMzM3OqZzJXdbkxFZWgKuhQnOo8DpEI/n1B6uRShQfhL2WIT2SSD+c/Kk2CapgTmKbqWKjV7kZjDQ89mVxS0M61qIjcu+lvipViTz6GHzGZFTinNoq3WdKHw+TCfpCg79bF0jjdIfwqK4+jnyEjIYPRvTy2xTwRtn//WkC83kKTd1jaqtKPrcxHnDiIfwhJ4/kvykfJLcBek2FqF1F2eFQPxrqPm5CQYS/EShtWvkn2oBGDjrc1SEgQ2rEYBWcjl4+yti/ZYqIylG8jmlj94DFcI+7jlyU3+k6bADR70c=
+  on:
+    tags: true
+    repo: xbtsw/fra-standalone

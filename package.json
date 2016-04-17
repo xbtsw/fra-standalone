@@ -4,23 +4,23 @@
   "description": "",
   "bin": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"no test intended\" && exit 0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xbtsw/frau-standalone.git"
+    "url": "git+https://github.com/xbtsw/fra-standalone.git"
   },
   "author": "xbtsw",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/xbtsw/frau-standalone/issues"
+    "url": "https://github.com/xbtsw/fra-standalone/issues"
   },
-  "homepage": "https://github.com/xbtsw/frau-standalone#readme",
+  "homepage": "https://github.com/xbtsw/fra-standalone#readme",
   "dependencies": {
-    "callsite": "^1.0.0",
+    "chalk": "^1.1.3",
+    "chokidar": "^1.4.3",
     "express": "^4.13.4",
-    "getsandbox-express": "git://github.com/xbtsw/getsandbox-express.git",
-    "resolve": "^1.1.7",
-    "shelljs": "^0.6.0"
+    "getsandbox-express": "^1.0.0",
+    "micromatch": "^2.3.7"
   }
 }
