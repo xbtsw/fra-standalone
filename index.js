@@ -9,7 +9,7 @@ var chalk = require('chalk');
 var chokidar = require('chokidar');
 var fs = require('fs');
 
-var server;
+var server, app;
 var buildProcesses;
 
 
@@ -43,10 +43,20 @@ function resolvePath(filepath) {
 }
 
 function createServer() {
-  var app = express();
+  app = express();
 
   resolveMultiConfig(config.sandboxes).forEach(function(sandbox) {
     loadSandbox(app, resolvePath(sandbox));
+  });
+
+  app.set('app_shutdown', false);
+
+  app.use(function(req, res, next) {
+    if (app.settings.app_shutdown) {
+      req.connection.setTimeout(1)
+    }
+
+    next();
   });
 
   //load static folder
@@ -68,6 +78,7 @@ function createServer() {
 }
 
 function stopServer(callback) {
+  app.set('app_shutdown', true);
   server.close(callback);
 }
 

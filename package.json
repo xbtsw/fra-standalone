@@ -20,7 +20,6 @@
     "chalk": "^1.1.3",
     "chokidar": "^1.4.3",
     "express": "^4.13.4",
-    "getsandbox-express": "^1.0.0",
-    "micromatch": "^2.3.7"
+    "getsandbox-express": "^1.0.0"
   }
 }
