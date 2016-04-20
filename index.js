@@ -18,6 +18,7 @@ if (!configPath) {
   process.exit(1);
 }
 var configDir = path.dirname(configPath);
+var projectRootDir = path.dirname(configDir);
 var config = require(configPath);
 
 function findConfigPath() {
@@ -73,7 +74,7 @@ function createServer() {
   });
 
   server = app.listen(3000, function() {
-    console.log('Standalone started.')
+    console.log('Standalone server started.')
   });
 }
 
@@ -88,14 +89,14 @@ function startBuilds() {
     var shell;
     if (/win32/.test(process.platform)) {
       shell = 'cmd.exe';
-      cmd = ['/s', '/c'].concat(cmd.split(' '));
+      cmd = ['/s', '/c'].concat([cmd]);
     } else {
       shell = 'sh';
-      cmd = ['-c'].concat(cmd.split(' '));
+      cmd = ['-c'].concat([cmd]);
     }
     var buildProcess = spawn(shell, cmd, {
       shell: true,
-      cwd: configDir
+      cwd: projectRootDir
     });
 
     var pid = buildProcess.pid;
@@ -108,7 +109,7 @@ function startBuilds() {
       process.stderr.write(data);
     });
 
-    buildProcess.on('close', function() {
+    buildProcess.on('exit', function() {
       delete buildProcesses[pid];
     });
 
@@ -125,26 +126,56 @@ function stopBuilds(callback) {
   for (var key in buildProcesses) {
     if (buildProcesses.hasOwnProperty(key)) {
       count++;
-      buildProcesses[key].kill();
+      if (buildProcesses.killed) {
+        delete buildProcesses[key];
+      } else {
+        buildProcesses[key].kill();
+      }
     }
   }
   if (count !== 0) {
-    setInterval(stopBuilds.bind(null, callback), 500);
+    setTimeout(stopBuilds.bind(null, callback), 500);
   } else {
     callback();
   }
 }
 
-startBuilds();
-createServer();
+var status = "shut down";
+startupDaemon();
 
 chokidar.watch(configDir)
   .on('change', function() {
-    console.log(chalk.yellow('.standalone change detected, refreshing...'));
-    stopBuilds(function() {
-      stopServer(function() {
-        startBuilds();
-        createServer();
+    switch (status) {
+    case "running":
+      console.log(chalk.yellow('Shutting down standalone...'));
+      status = "shutting down";
+      stopBuilds(function() {
+        stopServer(function() {
+          console.log(chalk.yellow('Standalone shut down...'));
+          status = "shut down";
+        });
       });
-    });
+      break;
+    case "error":
+      status = 'shut down';
+      break;
+    }
   });
+
+function startupDaemon() {
+  switch (status) {
+  case "shut down":
+    try {
+      console.log(chalk.yellow('Restarting standalone...'));
+      createServer();
+      startBuilds();
+      status = "running";
+    } catch (ex) {
+      console.error(chalk.red('Error detected in .standalone folder:'));
+      console.error(chalk.red(ex.stack));
+      status = "error";
+    }
+    break;
+  }
+  setTimeout(startupDaemon, 500);
+}
