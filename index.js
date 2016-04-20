@@ -90,18 +90,22 @@ function stopServer(callback) {
 function startBuilds() {
   buildProcesses = {};
   resolveMultiConfig(config.buildCommands).forEach(function(cmd) {
-    var shell;
-    if (/win32/.test(process.platform)) {
-      shell = 'cmd.exe';
-      cmd = ['/s', '/c'].concat([cmd]);
-    } else {
-      shell = 'sh';
-      cmd = ['-c'].concat([cmd]);
-    }
-    var buildProcess = spawn(shell, cmd, {
-      shell: true,
+    var file;
+    var args;
+    var options = {
       cwd: projectRootDir
-    });
+    };
+
+    if (process.platform === 'win32') {
+      file = process.env.comspec || 'cmd.exe';
+      args = ['/s', '/c', '"' + cmd + '"'];
+      options.windowsVerbatimArguments = true;
+    } else {
+      file = '/bin/sh';
+      args = ['-c', cmd];
+    }
+
+    var buildProcess = spawn(file, args, options);
 
     var pid = buildProcess.pid;
 
@@ -117,18 +121,27 @@ function startBuilds() {
       console.error(chalk.red('Failed to start build command "' + cmd + '", ' + err));
     });
 
-    buildProcesses[pid] = buildProcess;
+    buildProcesses[pid] = {
+      beingKilled: false
+    };
   });
 }
 
 function stopBuilds(callback) {
   var count = 0;
-  for (var key in buildProcesses) {
-    if (buildProcesses.hasOwnProperty(key)) {
+  for (var pid in buildProcesses) {
+    if (buildProcesses.hasOwnProperty(pid)) {
       count++;
-      treekill(key, 'SIGTERM', function() {
-        delete buildProcesses[key];
-      });
+      if (!buildProcesses[pid].beingKilled) {
+        buildProcesses[pid].beingKilled = true;
+        treekill(pid, 'SIGTERM', function(err) {
+          if (!err) {
+            delete buildProcesses[pid];
+          }else{
+            buildProcesses[pid].beingKilled = false;
+          }
+        });
+      }
     }
   }
   if (count !== 0) {
