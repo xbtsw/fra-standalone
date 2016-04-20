@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var path = require('path');
+var reload = require('require-reload')(require);
 var resolveMultiConfig = require('./templates/common.js').resolveMultiConfig;
 var loadSandbox = require('getsandbox-express').loadSandbox;
 var express = require('express');
@@ -8,18 +9,18 @@ var spawn = require('child_process').spawn;
 var chalk = require('chalk');
 var chokidar = require('chokidar');
 var fs = require('fs');
+var treekill = require('tree-kill');
 
+var configPath, configDir, projectRootDir, config;
 var server, app;
 var buildProcesses;
 
-
-var configPath = findConfigPath();
+configPath = findConfigPath();
 if (!configPath) {
   process.exit(1);
 }
-var configDir = path.dirname(configPath);
-var projectRootDir = path.dirname(configDir);
-var config = require(configPath);
+configDir = path.dirname(configPath);
+projectRootDir = path.dirname(configDir);
 
 function findConfigPath() {
   var currentDir = path.resolve(process.cwd());
@@ -39,6 +40,9 @@ function findConfigPath() {
   console.error(chalk.red('Failed to find valid .standalone folder'));
 }
 
+function reloadConfig() {
+  config = reload(configPath);
+}
 function resolvePath(filepath) {
   return path.resolve(configDir, filepath);
 }
@@ -87,6 +91,7 @@ function startBuilds() {
   buildProcesses = {};
   resolveMultiConfig(config.buildCommands).forEach(function(cmd) {
     var shell;
+    cmd = '"' + cmd + '"';
     if (/win32/.test(process.platform)) {
       shell = 'cmd.exe';
       cmd = ['/s', '/c'].concat([cmd]);
@@ -109,10 +114,6 @@ function startBuilds() {
       process.stderr.write(data);
     });
 
-    buildProcess.on('exit', function() {
-      delete buildProcesses[pid];
-    });
-
     buildProcess.on('error', function(err) {
       console.error(chalk.red('Failed to start build command "' + cmd + '", ' + err));
     });
@@ -126,11 +127,9 @@ function stopBuilds(callback) {
   for (var key in buildProcesses) {
     if (buildProcesses.hasOwnProperty(key)) {
       count++;
-      if (buildProcesses.killed) {
+      treekill(key, 'SIGTERM', function() {
         delete buildProcesses[key];
-      } else {
-        buildProcesses[key].kill();
-      }
+      });
     }
   }
   if (count !== 0) {
@@ -141,6 +140,7 @@ function stopBuilds(callback) {
 }
 
 var status = "shut down";
+
 startupDaemon();
 
 chokidar.watch(configDir)
@@ -167,6 +167,7 @@ function startupDaemon() {
   case "shut down":
     try {
       console.log(chalk.yellow('Restarting standalone...'));
+      reloadConfig();
       createServer();
       startBuilds();
       status = "running";
