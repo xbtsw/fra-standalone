@@ -91,7 +91,6 @@ function startBuilds() {
   buildProcesses = {};
   resolveMultiConfig(config.buildCommands).forEach(function(cmd) {
     var shell;
-    cmd = '"' + cmd + '"';
     if (/win32/.test(process.platform)) {
       shell = 'cmd.exe';
       cmd = ['/s', '/c'].concat([cmd]);
