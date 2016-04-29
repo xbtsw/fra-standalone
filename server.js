@@ -2,10 +2,11 @@ var loadSandbox = require('getsandbox-express').loadSandbox;
 var express = require('express');
 var resolveMultiConfig = require('./templates/common.js').resolveMultiConfig;
 var config = require('./config.js');
-var sax = require('sax');
 var path = require('path');
 var url = require('url');
 var httpProxy = require('http-proxy');
+var harmon = require('harmon');
+var htmlParser = require('htmlparser2');
 
 var app, proxyServer, server;
 
@@ -38,8 +39,6 @@ exports.createServer = function createServer() {
   app.use('/.standalone/templates', express.static(path.join(__dirname, 'templates')));
 
   if (config.standaloneConfig.shadowUrl) {
-    //catch-all shadowing
-    //has to be last `use()`
     var parsedShadowUrl = url.parse(config.standaloneConfig.shadowUrl);
     var shadowPath = parsedShadowUrl.path;
     delete parsedShadowUrl.pathname;
@@ -48,22 +47,35 @@ exports.createServer = function createServer() {
     delete parsedShadowUrl.hash;
     var shadowHost = url.format(parsedShadowUrl);
 
-    proxyServer.on('proxyRes', function(proxyRes, req, res) {
+    app.use(function(req, res, next) {
       if (req.originalUrl === shadowPath) {
-        var xmlStream = sax.createStream(false);
-        xmlStream.on('closetag', function(node){
-          console.log('wei');
-        });
-        xmlStream.on('error', function(error){
-          console.log(error);
-          this._parser.error = null;
-          this._parser.resume();
-        });
-        proxyRes.pipe(xmlStream);
-      }
+        harmon([], [{
+          query: 'body',
+          func: function(node) {
+            var nodeStream = node.createStream({"outer": true});
 
+            var parserStream = new htmlParser.WritableStream({
+              onclosetag: function(tagName){
+                if(tagName === 'body'){
+                  nodeStream.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.js"></script><script src="/.standalone/templates/shadow.js"></script>');
+                }
+              }
+            });
+
+            nodeStream.on('end', function(){
+              nodeStream.end();
+            });
+            nodeStream.pipe(nodeStream);
+            nodeStream.pipe(parserStream);
+          }
+        }], true).call(this, req, res, next);
+      } else {
+        next();
+      }
     });
 
+    //catch-all shadowing
+    //has to be last `use()`
     app.use(function(req, res) {
       proxyServer.web(req, res, {
         target: shadowHost,
