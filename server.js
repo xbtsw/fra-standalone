@@ -47,6 +47,10 @@ exports.createServer = function createServer() {
     delete parsedShadowUrl.hash;
     var shadowHost = url.format(parsedShadowUrl);
 
+    app.get('/', function(req, res) {
+      res.redirect(shadowPath);
+    });
+
     app.use(function(req, res, next) {
       if (req.originalUrl === shadowPath) {
         harmon([], [{
