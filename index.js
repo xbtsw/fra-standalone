@@ -3,7 +3,8 @@ var chalk = require('chalk');
 var chokidar = require('chokidar');
 var config = require('./config.js');
 var server = require('./server.js');
-var build = require('./build.js');
+var processes = require('./processes.js');
+var path = require('path');
 
 var status = "shut down";
 
@@ -15,11 +16,9 @@ chokidar.watch(config.configDir)
     case "running":
       console.log(chalk.yellow('Shutting down standalone...'));
       status = "shutting down";
-      build.stopBuilds(function() {
-        server.stopServer(function() {
+      processes.stopProcesses(function() {
           console.log(chalk.yellow('Standalone shut down...'));
           status = "shut down";
-        });
       });
       break;
     case "error":
@@ -34,8 +33,17 @@ function startupDaemon() {
     try {
       console.log(chalk.yellow('Restarting standalone...'));
       config.reloadConfig();
-      server.createServer();
-      build.startBuilds();
+
+      var spawnArgs = config.buildSpawnArgs.slice(0);
+      //server
+      spawnArgs.push({
+        file: process.execPath,
+        args: [path.join(__dirname, 'server.js')],
+        options: {
+          cwd: process.cwd()
+        }
+      });
+      processes.startProcesses(spawnArgs);
       status = "running";
     } catch (ex) {
       console.error(chalk.red('Error detected in .standalone folder:'));
