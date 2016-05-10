@@ -2,7 +2,6 @@
 var chalk = require('chalk');
 var chokidar = require('chokidar');
 var config = require('./config.js');
-var server = require('./server.js');
 var processes = require('./processes.js');
 var path = require('path');
 
